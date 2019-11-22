@@ -420,20 +420,46 @@ Service.Editor.StripSpecificStatements = function(self, arr)
 
 end;
 
-
+--not super omega advanced lmao, big sad.
 local Source = [=[
-    <A><B><C>|"Testing"
+    <A><(<AAAAA>)>|"Testing"
 ]=];
+--[[fuck we need seperators
+like [shit] so we can just stick variables in there
 
+lmao[beeet] = 'lmao'
+lmao.beeet = 'lmao'
+we need to add seperators
+
+How-to-code in Glutinity
+
+> Variables
+    (VariablePhase)(ActionPhase)(ValuePhase)
+    All instances of setting variables work like this above
+    Variables are referenced always using <(VariableName)> where (VariableName) is the name of the
+        variable you want to reference.
+        You're able to also apply indexation and chaining to the variable IF it's a table.
+        Indexation: <Variable><Index>(Action)(Value)
+        Chaining: <Variable>["Test"]<A>(Action)(Value)
+        You cannot chain by itself, but you can apply chaining then indexation.
+
+        You can preset values using (Seperators), the only seperators that exist are parenthesis ().
+        Indexation: <Variable><(<AnotherVariable>)>(Action)(Value)
+        Chaining: <Variable>[(<AnotherVariable)]<A>(Action)(Value)
+        where <AnotherVariable> is any value
+    You can choose what you want to do with the variable but you have to state what do you want to do.
+        Currently (ActionPhase) describes this and the only phase it can be is <|>.
+    
+]]
 local Bytes = Service.Converter:StringToBytecodeArray(Source);
 local ByteChunk = Service.Editor:ReplicateArray(Bytes);
 local VariableData = Service.Editor:StripVariablePhase(ByteChunk); --variable phase has "chunks"
---the variable phase supports "chaining" lit. 
+--the variable phase supports "chaining" lit. oh shit what about indexing
 local ActionData = Service.Editor:StripActionPhase(ByteChunk); --no chunks, can only be a variable or so
 
 table.foreach(ActionData, print);
 print'______________________________';
-table.foreach(VariableData[3], print);
+table.foreach(VariableData[2], print);
 --return Service;
 
 
