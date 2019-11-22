@@ -422,7 +422,7 @@ end;
 
 --not super omega advanced lmao, big sad.
 local Source = [=[
-    <A><(<AAAAA>)>|"Testing"
+    <A>["Lmao"]<B>|"Testing"
 ]=];
 --[[fuck we need seperators
 like [shit] so we can just stick variables in there
@@ -443,13 +443,63 @@ How-to-code in Glutinity
         Chaining: <Variable>["Test"]<A>(Action)(Value)
         You cannot chain by itself, but you can apply chaining then indexation.
 
+        --Seperators are not supported at all yet
         You can preset values using (Seperators), the only seperators that exist are parenthesis ().
         Indexation: <Variable><(<AnotherVariable>)>(Action)(Value)
         Chaining: <Variable>[(<AnotherVariable)]<A>(Action)(Value)
         where <AnotherVariable> is any value
+    
     You can choose what you want to do with the variable but you have to state what do you want to do.
         Currently (ActionPhase) describes this and the only phase it can be is <|>.
     
+    The kinds of values you can set, there are A LOT.
+    
+    Value types:
+        Strings - "(Content)", '(Content)'
+        Multi-line Strings - *(Content)*
+        Function statements - +(Content)+
+        Containers - {(Content)}
+        Numbers/Integers (Content)
+        Booleans (Content)
+    
+    Operations:
+        Addition - (Content) + (Content)
+        Subtraction - (Content) - (Content)
+        Multiplication - (Content) * (Content)
+        Division - (Content) / (Content)
+        Power - (Content) ^ (Content)
+        Modulus - (Content) % (Content)
+
+        Equalizing - (Content) || (Content)
+        Inequalizing - (Content) !! (Content)
+        Concatenation - (Content) . (Content)
+        And -  (Content) and (Content)
+        Or - (Content) or (Content)
+        Is not - !(Content)
+    
+    Seperators:
+        Infinity Seperator - ((Content))
+    
+    
+> Sequencing and Transfering
+    (SequencePhase)(Conditional)(SequencePhaseEnd)+(Function)+
+
+    SequencePhase and SequencePhaseEnd should be the same.
+
+    Sequence Phases:
+        If statements - &(Conditional)&+(Function)+
+        Else If statements - &(Conditional)&+(Function)+:&(Conditional)&+(Function)+
+        Else statements - &(Conditional)&+(Function)+:-+(Function)+
+        Number loops - %(Variable)(Action)(Value),(Conditional),(Function)%+(ToDoFunction)+
+        Container loops - %(Variable),(Variable),(Container),(Filter)%+(Function)+
+    
+    Sequences above are considered to be "general" statements, because they are flexible.
+
+    Transfer Phases:
+        Return Variable - transfer (Variable)
+        Break loop - break
+    
+    Transfers above are considered to be "strict" statements, they're not very flexible.
 ]]
 local Bytes = Service.Converter:StringToBytecodeArray(Source);
 local ByteChunk = Service.Editor:ReplicateArray(Bytes);
@@ -459,7 +509,7 @@ local ActionData = Service.Editor:StripActionPhase(ByteChunk); --no chunks, can 
 
 table.foreach(ActionData, print);
 print'______________________________';
-table.foreach(VariableData[2], print);
+table.foreach(VariableData[3], print);
 --return Service;
 
 
