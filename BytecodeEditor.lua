@@ -148,6 +148,30 @@ Service.Bytes = function(self, str)
 			end;
 		end;
 	end;
+
+	local FindSequenceBeyondEndpoints = function(pos1, pos2, e1, e2)
+		local firstExterior = (function()
+			for i = 1, pos1 do
+				local currentChar = bytearray[pos1 - (i - 1)];
+				--print("A", pos1 - (i - 1));
+				if (currentChar == string.byte(e1) and i ~= 1) then
+					return pos1 - (i - 1);
+				end;
+			end;
+		end)();
+		local secondExterior = (function()
+			--print(pos2);
+			for i = pos2, #bytearray do
+				local currentChar = bytearray[pos2 + (i - pos2)];
+				--print("B", pos2 + (i - pos2));  --+ (i - 1));
+				if (currentChar == string.byte(e2) and i ~= 1) then
+					return pos2 + (i - pos2);
+				end;
+			end;
+		end)();
+		return firstExterior, secondExterior;
+	end;
+
 	local FindEntireSequence = function(seq)
 		local firstChar = seq:sub(1, 1);
 		local ByteOccurences = GetAllOfBytes(firstChar);
@@ -155,10 +179,8 @@ Service.Bytes = function(self, str)
 			for i = 1, #ByteOccurences do
 				local Index = ByteOccurences[i]; --string position
 				if (Index <= #bytearray) then --max string pos
-					print('we got here');
 					for i = 1, seq:len() do
 						local currentCharInString = seq:sub(i, i);
-						print(bytearray[Index + i], string.byte(currentCharInString));
 						if (bytearray[Index + (i - 1)] == string.byte(currentCharInString)) then
 							if (i == seq:len()) then
 								return Index, Index + (i - 1);
@@ -183,6 +205,8 @@ Service.Bytes = function(self, str)
 			return FindNonchainingSequenceByEndpoints;
 		elseif (index == 'FindAllNonchainingSequencesByEndpoints') then
 			return FindAllNonchainingSequencesByEndpoints;
+		elseif (index == 'FindSequenceBeyondEndpoints') then
+			return FindSequenceBeyondEndpoints;
         end;
     end;
     meta.__newindex = function(self, index, value)
@@ -696,14 +720,17 @@ How-to-code in Glutinity
 ]]
 local Source = [=[
 	<A>["Lmao"]<B>|"Testing"
-	<b><(A)>|"Lmaooo"
+	<b><(A)><b>|"Lmaooo"
 ]=];
 local ByteObj = Service:Bytes(Source);
 local ReferenceA = ByteObj.FindFirstByte('<');
-local Sequences = ByteObj.FindAllNonchainingSequencesByEndpoints('[', ']');
-for i, v in next, Sequences do
-	print(v[1], v[2])
-end;
+local BaseSeperators = ByteObj.FindAllNonchainingSequencesByEndpoints('(', ')');
+local BaseReferences = ByteObj.FindAllNonchainingSequencesByEndpoints('<', '>');
+
+local SeperatorData = BaseSeperators[1];
+print(SeperatorData[1], SeperatorData[2])
+local PureData = {ByteObj.FindSequenceBeyondEndpoints(SeperatorData[1], SeperatorData[2], '<', '>')};
+table.foreach(PureData, print);
 --[[
 local Bytes = Service.Converter:StringToBytecodeArray(Source);
 local ByteChunk = Service.Editor:ReplicateArray(Bytes);
