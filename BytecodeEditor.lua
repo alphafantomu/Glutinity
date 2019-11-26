@@ -292,7 +292,7 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
     --I think we should identify comments here lmao and ignore comments here
     local SafeCopy = Service.Editor:ReplicateArray(arr);
 
-    --Index chaining, <a><b>, <a>["b"], \+transfer 3+\[]
+    --Index chaining, <a><b>, <a>["b"], \+transfer 3+\[] what the fuck is this
     local FinishedSearching = false;
     local ReceivedChunks = {};
     local queryTimes = 0;
@@ -301,7 +301,7 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
     local FindFirstChunk = function()
         local IndexData = Service.Editor:FindChunk(SafeCopy, '<', '>', true);
         local ExecutionData = Service.Editor:FindChunk(SafeCopy, '[', ']', true);
-        local SeperatorData = Service.Editor:FindChunk(SafeCopy, '\\', '\\', true);
+        local SeperatorData = Service.Editor:FindChunk(SafeCopy, '\\', '\\', true); --interesting?
         local ds = {0, 0, 0};
         if (SeperatorData ~= nil and queryTimes == 1) then
             ds[1] = 1;
@@ -365,9 +365,9 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
         end;
     until
         FinishedSearching == true;
-    for i, v in next, ReceivedChunks do
+    --[[for i, v in next, ReceivedChunks do
         print(i, v.x..v.Name..v.y);
-    end;
+    end;]]
     return ReceivedChunks;
 end;
 
@@ -421,9 +421,7 @@ Service.Editor.StripSpecificStatements = function(self, arr)
 end;
 
 --not super omega advanced lmao, big sad.
-local Source = [=[
-    <A>["Lmao"]<B>|"Testing"
-]=];
+
 --[[fuck we need seperators
 like [shit] so we can just stick variables in there
 
@@ -501,15 +499,23 @@ How-to-code in Glutinity
     
     Transfers above are considered to be "strict" statements, they're not very flexible.
 ]]
+local Source = [=[<A>["Lmao"]<B>|"Testing" <B><A>|"Lmao" <C><A>|"Yeet"]=];
+
 local Bytes = Service.Converter:StringToBytecodeArray(Source);
 local ByteChunk = Service.Editor:ReplicateArray(Bytes);
 local VariableData = Service.Editor:StripVariablePhase(ByteChunk); --variable phase has "chunks"
 --the variable phase supports "chaining" lit. oh shit what about indexing
 local ActionData = Service.Editor:StripActionPhase(ByteChunk); --no chunks, can only be a variable or so
-
-table.foreach(ActionData, print);
+--lmao wtf variable phase grabs all references in existence
+for i = 1, 3 do
+    local Action = Service.Editor:StripActionPhase(ByteChunk);
+    Service.Editor:RemoveIndexChunk(ByteChunk, 1, ActionData.Final, false);
+    table.foreach(Action, print);
+    print'______________________________';
+end;
+--table.foreach(ActionData, print);
 print'______________________________';
-table.foreach(VariableData[3], print);
+table.foreach(VariableData, print);
 --return Service;
 
 
