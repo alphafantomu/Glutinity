@@ -7,6 +7,222 @@ Service.Converter = {};
 Service.Editor = {};
 local warn = warn or print;
 
+--[[
+	NetworkQueue is essentially how data is represented in order
+	Two types of network queues, Set and Command
+
+	<A>["Lmao"]<B>|"Testing"
+	<b><A>|"Lmaooo"
+	<A><("Lol")>|"Lmaoo"
+	<B><(<B>)>|"LmAA"
+	<C><(<(true or false)>)>|"AAAAAA"
+	Set = {
+		VariableChain = {
+			{
+				ReferenceName = 'A';
+				EndPoints = {'<', '>'};
+			};
+			{
+				ReferenceName = 'Lmao';
+				EndPoints = {'[', ']'};
+			};
+			{
+				ReferenceName = 'B';
+				EndPoints = {'<', '>'};
+			};
+		}; or
+		VariableChain = {
+			{
+				ReferenceName = 'A';
+				EndPoints = {'<', '>'};
+			};
+			{
+				ReferenceName = 'Lmao';
+				EndPoints = {'(', ')'}; ok this is really fucking weird
+			};
+			{
+				ReferenceName = 'B';
+				EndPoints = {'<', '>'};
+			};
+		}; or
+		Action = 'Defining';
+		ValueChain = {
+
+		};
+	};
+]]
+Service.Bytes = function(self, str)
+    local byte = newproxy(true);
+    local meta = getmetatable(byte);
+    local bytearray = {};
+	local bytestack = {};
+	
+	local NetworkQueue = {};
+    for i = 1, str:len() do
+        local byte = string.byte(str:sub(i, i));
+        if (bytestack[byte] == nil) then
+            bytestack[byte] = {};
+        end;
+        bytestack[byte][#bytestack[byte] + 1] = i;
+        bytearray[#bytearray + 1] = byte;
+    end;
+    local FindFirstByte = function(char)
+        local byte = string.byte(char);
+        if (bytestack[byte] ~= nil) then
+            return bytestack[byte][1];
+        end;
+	end;
+	local GetAllOfBytes = function(char)
+		local byte = string.byte(char);
+        if (bytestack[byte] ~= nil) then
+            return bytestack[byte];
+        end;
+	end;
+	local FindAllNonchainingSequencesByEndpoints = function(e1, e2)
+		local FirstEndpointOccurences = GetAllOfBytes(e1);
+		local SecondEndpointOccurences = GetAllOfBytes(e2);
+		local Sequences = {};
+		if (FirstEndpointOccurences == SecondEndpointOccurences) then
+			return FirstEndpointOccurences[1];
+		end;
+		for i = 1, #FirstEndpointOccurences do
+			local Pos = FirstEndpointOccurences[i];
+			for i2 = 1, #SecondEndpointOccurences  do
+				local SecondPos = SecondEndpointOccurences[i2];
+				if (Pos <= SecondPos) then
+					for i = Pos, SecondPos do
+						local byte = bytearray[i];
+						if (byte ~= string.byte('<') and byte ~= string.byte('>') and byte ~= string.byte('(') and byte ~= string.byte('(') and i ~= Pos and i ~= SecondPos) then
+							--here we're looking at the inner content and
+						elseif (byte == string.byte('<') or byte == string.byte('>') or byte == string.byte('(') or byte == string.byte(')')) then
+							if (i ~= Pos and i ~= SecondPos) then
+								break;
+							end;
+						end;
+						if (i == SecondPos) then --at the end here
+							--we have to check that this isnt in a multiline string tho
+							--wow we actually made it to the end without references
+							Sequences[#Sequences + 1] = {Pos, SecondPos};
+						end;
+					end;
+				--[[else
+					break;]]
+				end;
+			end;
+		end;
+		return Sequences;
+	end;
+
+	local FindNonchainingSequenceByEndpoints = function(e1, e2)
+		--meaning only true values will be evaluated in here
+		--what if <"<a>">
+		local FirstEndpointOccurences = GetAllOfBytes(e1);
+		local SecondEndpointOccurences = GetAllOfBytes(e2);
+		if (FirstEndpointOccurences == SecondEndpointOccurences) then
+			return FirstEndpointOccurences[1];
+		end;
+		for i = 1, #FirstEndpointOccurences do
+			local Pos = FirstEndpointOccurences[i];
+			for i2 = 1, #SecondEndpointOccurences  do
+				local SecondPos = SecondEndpointOccurences[i2];
+				if (Pos <= SecondPos) then
+					for i = Pos, SecondPos do
+						local byte = bytearray[i];
+						if (byte ~= string.byte('<') and byte ~= string.byte('>') and byte ~= string.byte('(') and byte ~= string.byte('(') and i ~= Pos and i ~= SecondPos) then
+							--here we're looking at the inner content and
+						elseif (byte == string.byte('<') or byte == string.byte('>') or byte == string.byte('(') or byte == string.byte(')')) then
+							if (i ~= Pos and i ~= SecondPos) then
+								break;
+							end;
+						end;
+						if (i == SecondPos) then --at the end here
+							--we have to check that this isnt in a multiline string tho
+							--wow we actually made it to the end without references
+							
+							return Pos, SecondPos;
+						end;
+					end;
+				--[[else
+					break;]]
+				end;
+			end;
+		end;
+	end;
+
+	local FindSequenceBeyondEndpoints = function(pos1, pos2, e1, e2)
+		local firstExterior = (function()
+			for i = 1, pos1 do
+				local currentChar = bytearray[pos1 - (i - 1)];
+				--print("A", pos1 - (i - 1));
+				if (currentChar == string.byte(e1) and i ~= 1) then
+					return pos1 - (i - 1);
+				end;
+			end;
+		end)();
+		local secondExterior = (function()
+			--print(pos2);
+			for i = pos2, #bytearray do
+				local currentChar = bytearray[pos2 + (i - pos2)];
+				--print("B", pos2 + (i - pos2));  --+ (i - 1));
+				if (currentChar == string.byte(e2) and i ~= 1) then
+					return pos2 + (i - pos2);
+				end;
+			end;
+		end)();
+		return firstExterior, secondExterior;
+	end;
+
+	local FindEntireSequence = function(seq)
+		local firstChar = seq:sub(1, 1);
+		local ByteOccurences = GetAllOfBytes(firstChar);
+		if (ByteOccurences ~= nil) then
+			for i = 1, #ByteOccurences do
+				local Index = ByteOccurences[i]; --string position
+				if (Index <= #bytearray) then --max string pos
+					for i = 1, seq:len() do
+						local currentCharInString = seq:sub(i, i);
+						if (bytearray[Index + (i - 1)] == string.byte(currentCharInString)) then
+							if (i == seq:len()) then
+								return Index, Index + (i - 1);
+							end;
+						end;
+					end;
+				end;
+			end;
+		end;
+	end;
+    local GetAllBytes = function()
+        return bytearray;
+    end;
+    meta.__index = function(self, index)
+        if (index == 'FindFirstByte') then
+            return FindFirstByte;
+        elseif (index == 'GetAllBytes') then
+			return GetAllBytes;
+		elseif (index == 'FindEntireSequence') then
+			return FindEntireSequence;
+		elseif (index == 'FindNonchainingSequenceByEndpoints') then
+			return FindNonchainingSequenceByEndpoints;
+		elseif (index == 'FindAllNonchainingSequencesByEndpoints') then
+			return FindAllNonchainingSequencesByEndpoints;
+		elseif (index == 'FindSequenceBeyondEndpoints') then
+			return FindSequenceBeyondEndpoints;
+        end;
+    end;
+    meta.__newindex = function(self, index, value)
+        return nil;
+    end;
+    meta.__tostring = function(self)
+        local str = {};
+        for i = 1, #bytearray do
+            str[#str + 1] = string.char(bytearray[i]);
+        end;
+        return table.concat(str, '');
+    end;
+    meta.__metatable = 'Byte';
+    return byte;
+end;
+
 Service.Converter.StringToBytecodeArray = function(self, str)
     local BytecodeArray = {};
     for i = 1, str:len() do
@@ -447,6 +663,9 @@ How-to-code in Glutinity
         Chaining: <Variable>[(<AnotherVariable)]<A>(Action)(Value)
         where <AnotherVariable> is any value
     
+        Lua version
+        A.B = 'lol';
+        A['lmao'].B = 'lol';
     You can choose what you want to do with the variable but you have to state what do you want to do.
         Currently (ActionPhase) describes this and the only phase it can be is <|>.
     
@@ -499,23 +718,29 @@ How-to-code in Glutinity
     
     Transfers above are considered to be "strict" statements, they're not very flexible.
 ]]
-local Source = [=[<A>["Lmao"]<B>|"Testing" <B><A>|"Lmao" <C><A>|"Yeet"]=];
+local Source = [=[
+	<A>["Lmao"]<B>|"Testing"
+	<b><(A)><b>|"Lmaooo"
+]=];
+local ByteObj = Service:Bytes(Source);
+local ReferenceA = ByteObj.FindFirstByte('<');
+local BaseSeperators = ByteObj.FindAllNonchainingSequencesByEndpoints('(', ')');
+local BaseReferences = ByteObj.FindAllNonchainingSequencesByEndpoints('<', '>');
 
+local SeperatorData = BaseSeperators[1];
+print(SeperatorData[1], SeperatorData[2])
+local PureData = {ByteObj.FindSequenceBeyondEndpoints(SeperatorData[1], SeperatorData[2], '<', '>')};
+table.foreach(PureData, print);
+--[[
 local Bytes = Service.Converter:StringToBytecodeArray(Source);
 local ByteChunk = Service.Editor:ReplicateArray(Bytes);
 local VariableData = Service.Editor:StripVariablePhase(ByteChunk); --variable phase has "chunks"
 --the variable phase supports "chaining" lit. oh shit what about indexing
-local ActionData = Service.Editor:StripActionPhase(ByteChunk); --no chunks, can only be a variable or so
---lmao wtf variable phase grabs all references in existence
-for i = 1, 3 do
-    local Action = Service.Editor:StripActionPhase(ByteChunk);
-    Service.Editor:RemoveIndexChunk(ByteChunk, 1, ActionData.Final, false);
-    table.foreach(Action, print);
-    print'______________________________';
-end;
---table.foreach(ActionData, print);
+local ActionData = Service.Editor:StripActionPhase(ByteChunk); --no chunks, can only be a variable or so]]
+--[[
+table.foreach(ActionData, print);
 print'______________________________';
-table.foreach(VariableData, print);
+table.foreach(VariableData[3], print);]]
 --return Service;
 
 
