@@ -112,8 +112,14 @@ Service.Bytes = function(self, str)
 		end;
 		return Sequences;
 	end;
-
-	local FindNonchainingSequenceByEndpoints = function(e1, e2)
+    --[[
+        <A>["Lmao"]<B>|"Testing"
+        <b><A>|"Lmaooo"
+        <A><("Lol")>|"Lmaoo"
+        <("LMAOO")><(<("B")>)><("A")>|"LmAA"
+        <C><(<(true or false)>)>|"AAAAAA"
+    ]]
+	local FindNonchainingSequenceByEndpoints = function(e1, e2) --this function will be used as a base for chaining
 		--meaning only true values will be evaluated in here
 		--what if <"<a>">
 		local FirstEndpointOccurences = GetAllOfBytes(e1);
@@ -137,8 +143,11 @@ Service.Bytes = function(self, str)
 						end;
 						if (i == SecondPos) then --at the end here
 							--we have to check that this isnt in a multiline string tho
-							--wow we actually made it to the end without references
-							
+							--wow we actually made it to the end without references, oh shit we actually have to only check if this is in a string or not
+                            local IsInString = {FindSequenceBeyondEndpoints(Pos, SecondPos, '"', '"')};
+                            if (IsInString[1] ~= nil) then
+                                --this is going to be super hard to identify if this is in a string or something
+                            end;
 							return Pos, SecondPos;
 						end;
 					end;
