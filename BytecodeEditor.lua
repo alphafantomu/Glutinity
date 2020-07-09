@@ -517,7 +517,7 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
     --I think we should identify comments here lmao and ignore comments here
     local SafeCopy = Service.Editor:ReplicateArray(arr);
 
-    --Index chaining, <a><b>, <a>["b"], \+transfer 3+\[]
+    --Index chaining, <a><b>, <a>["b"], \+transfer 3+\[] what the fuck is this
     local FinishedSearching = false;
     local ReceivedChunks = {};
     local queryTimes = 0;
@@ -526,7 +526,7 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
     local FindFirstChunk = function()
         local IndexData = Service.Editor:FindChunk(SafeCopy, '<', '>', true);
         local ExecutionData = Service.Editor:FindChunk(SafeCopy, '[', ']', true);
-        local SeperatorData = Service.Editor:FindChunk(SafeCopy, '\\', '\\', true);
+        local SeperatorData = Service.Editor:FindChunk(SafeCopy, '\\', '\\', true); --interesting?
         local ds = {0, 0, 0};
         if (SeperatorData ~= nil and queryTimes == 1) then
             ds[1] = 1;
@@ -590,9 +590,9 @@ Service.Editor.StripVariablePhase = function(self, arr) --awesome it works, now 
         end;
     until
         FinishedSearching == true;
-    for i, v in next, ReceivedChunks do
+    --[[for i, v in next, ReceivedChunks do
         print(i, v.x..v.Name..v.y);
-    end;
+    end;]]
     return ReceivedChunks;
 end;
 
